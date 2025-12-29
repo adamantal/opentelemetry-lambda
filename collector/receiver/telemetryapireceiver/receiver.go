@@ -298,6 +298,12 @@ func createReportLogRecord(scopeLog *plog.ScopeLogs, record map[string]interface
 		return nil
 	}
 
+	// checking status
+	reportStatus := string(telemetryapi.PlatformReportStatusSuccess)
+	if status, ok := record["status"].(string); ok {
+		reportStatus = status
+	}
+
 	// we have all information available, we can create the log record
 	logRecord := scopeLog.LogRecords().AppendEmpty()
 	logRecord.Attributes().PutStr(semconv.AttributeFaaSInvocationID, requestId)
@@ -313,6 +319,10 @@ func createReportLogRecord(scopeLog *plog.ScopeLogs, record map[string]interface
 	)
 	if initDurationMs > 0 {
 		body += fmt.Sprintf(" Init Duration: %.2f ms", initDurationMs)
+	}
+	// AWS does not log success status, let's conform to that
+	if reportStatus != string(telemetryapi.PlatformReportStatusSuccess) {
+		body += fmt.Sprintf(" Status: %s", reportStatus)
 	}
 	logRecord.Body().SetStr(body)
 
